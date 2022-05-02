@@ -45,9 +45,9 @@ services:
   wordpress:
     image: wordpress
     environment:
-      WORDPRESS_DB_HOST: wordpressdb.c5wxcnh4fk1h.us-east-1.rds.amazonaws.com
+      WORDPRESS_DB_HOST: wordpressdb.example.us-east-1.rds.amazonaws.com
       WORDPRESS_DB_USER: admin
-      WORDPRESS_DB_PASSWORD: ly2hNv7SR11Db6Ul8HetibReYeIOFcmL
+      WORDPRESS_DB_PASSWORD: ***********************
       WORDPRESS_DB_NAME: wordpress
     networks:
       - "monitoring-network"
