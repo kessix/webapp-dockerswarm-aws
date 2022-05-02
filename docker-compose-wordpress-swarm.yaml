@@ -1,0 +1,66 @@
+version: "3.7"
+
+x-deploy: &template-deploy
+  replicas: 1
+  restart_policy:
+    condition: on-failure
+  update_config:
+    parallelism: 1
+    delay: 10s
+
+services:
+  traefik:
+    image: traefik:v2.2.1
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.traefik.rule=Host(`traefik.godric.local`)"
+        - "traefik.http.services.justAdummyService.loadbalancer.server.port=1337"
+        - "traefik.http.routers.traefik.service=api@internal"
+    ports:
+      - "80:80"
+      - "843:443"
+    networks:
+      - "monitoring-network"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - "--api=true"
+      - "--log.level=DEBUG"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.swarmMode=true"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+        
+  wordpress:
+    image: wordpress
+    environment:
+      WORDPRESS_DB_HOST: wordpressdb.c5wxcnh4fk1h.us-east-1.rds.amazonaws.com
+      WORDPRESS_DB_USER: admin
+      WORDPRESS_DB_PASSWORD: ly2hNv7SR11Db6Ul8HetibReYeIOFcmL
+      WORDPRESS_DB_NAME: wordpress
+    networks:
+      - "monitoring-network"
+    volumes:
+      - /mnt/app-data-vol:/var/www/html
+    deploy: 
+      <<: *template-deploy
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.wordpress.entrypoints=web"
+        - "traefik.http.routers.wordpress.rule=Host(`wordpress.godric.local`)"
+        - "traefik.http.services.wordpress.loadbalancer.server.port=80"
+
+networks: 
+  monitoring-network:
+    external: true
